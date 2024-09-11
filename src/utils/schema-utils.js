@@ -52,7 +52,7 @@ export function getTypeInfo(parameter, options = { includeNulls: false, enableEx
   };
 
   if (dataType === 'array' && schema.items) {
-    const arrayItemType = schema.items.type;
+    const arrayItemType = (schema.items || []).map(item => item.type);
     const arrayItemDefault = schema.items.default ?? schema.default ?? '';
 
     info.arrayType = `${schema.type} of ${Array.isArray(arrayItemType) ? arrayItemType.join('') : arrayItemType}`;
@@ -360,7 +360,7 @@ export function schemaInObjectNotation(rawSchema, options, level = 0, suffix = '
     resultObj['::metadata'] = metadata;
     return resultObj;
   }
-  
+
   if (Array.isArray(propertyType)) {
     const obj = { '::type': '' };
     // When a property has multiple types, then check further if any of the types are array or object, if yes then modify the schema using one-of
@@ -443,7 +443,7 @@ export function schemaInObjectNotation(rawSchema, options, level = 0, suffix = '
     }
     return obj;
   }
-  
+
   if (propertyType === 'object' || schemaProperties) {
     const obj = { '::type': '' };
     obj['::title'] = schema.title || '';
@@ -468,7 +468,7 @@ export function schemaInObjectNotation(rawSchema, options, level = 0, suffix = '
     }
     return obj;
   }
-  
+
   if (propertyType === 'array' || arrayItemsSchema) { // If Array
     const obj = { '::type': '' };
     obj['::title'] = schema.title || '';

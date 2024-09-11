@@ -10,6 +10,7 @@ import { toMarkdown } from '../utils/common-utils.js';
 import './schema-tree.js';
 import getRequestFormTable from './request-form-table.js';
 import './tag-input.js';
+import './tag-tuple-input.js';
 import './syntax-highlighter.js';
 import json5 from 'json5';
 
@@ -79,7 +80,7 @@ export default class ApiRequest extends LitElement {
     return keyed(id, html`
       <div id="api-request-${id}"
         class="api-request col regular-font request-panel ${(this.renderStyle === 'focused' || this.callback === 'true') ? 'focused-mode' : 'view-mode'}">
-        <div class=" ${this.callback === 'true' ? 'tiny-title' : 'req-res-title'} "> 
+        <div class=" ${this.callback === 'true' ? 'tiny-title' : 'req-res-title'} ">
           ${this.callback === 'true' ? 'CALLBACK REQUEST' : getI18nText('operations.request')}
         </div>
         <div>
@@ -142,7 +143,7 @@ export default class ApiRequest extends LitElement {
       let paramStyle = 'form';
       let paramExplode = true;
       if (paramLocation === 'query') {
-        if (param.style && 'form spaceDelimited pipeDelimited'.includes(param.style)) {
+        if (param.style && 'form spaceDelimited pipeDelimited deepObject'.includes(param.style)) {
           paramStyle = param.style;
         }
         if (typeof param.explode === 'boolean') {
@@ -151,11 +152,12 @@ export default class ApiRequest extends LitElement {
       }
 
       const displayAllowedValuesHints = (paramSchema.type === 'object' || paramSchema.type === 'array') && paramSchema.allowedValues;
+      const deepObjectNameSuffix = paramSchema.type === 'object' && paramStyle === 'deepObject' ? '[*]' : '';
       tableRows.push(html`
-      <tr> 
+      <tr>
         <td colspan="1" style="width:160px; min-width:50px; vertical-align: top">
           <div class="param-name ${paramSchema.deprecated ? 'deprecated' : ''}" style="margin-top: 1rem;">
-            ${param.name}${!paramSchema.deprecated && param.required ? html`<span style='color:var(--red);'>*</span>` : ''}
+            ${param.name}${deepObjectNameSuffix}${!paramSchema.deprecated && param.required ? html`<span style='color:var(--red);'>*</span>` : ''}
           </div>
           <div class="param-type" style="margin-bottom: 1rem;">
             ${paramSchema.type === 'array'
@@ -163,13 +165,13 @@ export default class ApiRequest extends LitElement {
               : `${paramSchema.format ? paramSchema.format : paramSchema.type}`
             }${!paramSchema.deprecated && param.required ? html`<span style='opacity: 0;'>*</span>` : ''}
           </div>
-        </td>  
+        </td>
         <td colspan="2" style="min-width:160px; vertical-align: top">
           ${this.allowTry === 'true'
             ? paramSchema.type === 'array' && html`
-            <div style=" margin-top: 1rem; margin-bottom: 1rem;">    
-              <tag-input class="request-param" 
-                style = "width:100%;" 
+            <div style=" margin-top: 1rem; margin-bottom: 1rem;">
+              <tag-input class="request-param"
+                style = "width:100%;"
                 data-ptype = "${paramLocation}"
                 data-pname = "${param.name}"
                 data-default = "${Array.isArray(defaultVal) ? defaultVal.join('~|~') : defaultVal}"
@@ -179,6 +181,21 @@ export default class ApiRequest extends LitElement {
                 placeholder="add-multiple ↩"
                 @change="${(e) => { this.storedParamValues[param.name] = e.detail.value; this.computeCurlSyntax(); }}"
                 .value = "${this.storedParamValues[param.name] ?? (this.fillRequestWithDefault === 'true' && Array.isArray(defaultVal) ? defaultVal : defaultVal.split(','))}"></tag-input>
+            </div>`
+            || paramSchema.type === 'object' && paramStyle === 'deepObject' && html`
+            <div style=" margin-top: 1rem; margin-bottom: 1rem;">
+              <tag-tuple-input class="request-param"
+                style = "width:100%;"
+                data-ptype = "${paramLocation}"
+                data-pname = "${param.name}"
+                data-default = "${defaultVal}"
+                data-param-serialize-style = "${paramStyle}"
+                data-param-serialize-explode = "${paramExplode}"
+                data-object = "true"
+                placeholder="add-multiple key-value pairs ↩"
+                placeholderValue="enter the value ↩"
+                @change="${(e) => { this.storedParamValues[param.name] = e.detail.value; this.computeCurlSyntax(); }}"
+                .value = "${this.storedParamValues[param.name] ?? (this.fillRequestWithDefault === 'true' && defaultVal)}"></tag-input>
             </div>`
             || paramSchema.type === 'object' && html`
               <textarea
@@ -214,7 +231,7 @@ export default class ApiRequest extends LitElement {
                 class="request-param"
                 part="textbox textbox-param"
                 data-ptype="${paramLocation}"
-                data-pname="${param.name}" 
+                data-pname="${param.name}"
                 data-default="${Array.isArray(defaultVal) ? defaultVal.join('~|~') : defaultVal}"
                 data-array="false"
                 @keyup="${this.requestParamFunction}"
@@ -259,13 +276,13 @@ export default class ApiRequest extends LitElement {
                             }
                           }}"
                         >
-                          ${v === null ? '-' : v} 
+                          ${v === null ? '-' : v}
                         </a>`
                       }`)}
                   </div>`
                 : ''
               }
-            </td>  
+            </td>
           </tr>`
         : ''
       }
@@ -453,8 +470,8 @@ export default class ApiRequest extends LitElement {
             ? ''
             : html`
               <select aria-label='request body example' style="min-width:100px; max-width:100%;  margin-bottom:-1px;" @change='${(e) => this.onSelectExample(e)}'>
-                ${reqBodyExamples.map((v) => html`<option value="${v.exampleId}" ?selected=${v.exampleId === this.selectedRequestBodyExample}> 
-                  ${v.exampleSummary.length > 80 ? v.exampleId : v.exampleSummary ? v.exampleSummary : v.exampleId} 
+                ${reqBodyExamples.map((v) => html`<option value="${v.exampleId}" ?selected=${v.exampleId === this.selectedRequestBodyExample}>
+                  ${v.exampleSummary.length > 80 ? v.exampleId : v.exampleSummary ? v.exampleSummary : v.exampleId}
                 </option>`)}
               </select>`
           }
@@ -469,7 +486,7 @@ export default class ApiRequest extends LitElement {
                   class = "textarea request-body-param-user-input"
                   part = "textarea textarea-param"
                   spellcheck = "false"
-                  data-ptype = "${reqBody.mimeType}" 
+                  data-ptype = "${reqBody.mimeType}"
                   data-default = "${displayedBodyExample.exampleFormat === 'text' ? displayedBodyExample.exampleValue : JSON.stringify(displayedBodyExample.exampleValue, null, 8)}"
                   data-default-format = "${displayedBodyExample.exampleFormat}"
                   style="width:100%; resize:vertical;"
@@ -479,9 +496,9 @@ export default class ApiRequest extends LitElement {
 
               <!-- This textarea(hidden) is to store the original example value, this will remain unchanged when users switches from one example to another, its is used to populate the editable textarea -->
               <textarea
-                class = "textarea is-hidden request-body-param ${reqBody.mimeType.substring(reqBody.mimeType.indexOf('/') + 1)}" 
+                class = "textarea is-hidden request-body-param ${reqBody.mimeType.substring(reqBody.mimeType.indexOf('/') + 1)}"
                 spellcheck = "false"
-                data-ptype = "${reqBody.mimeType}" 
+                data-ptype = "${reqBody.mimeType}"
                 style="width:100%; resize:vertical; display:none"
                 .value="${(displayedBodyExample.exampleFormat === 'text' ? displayedBodyExample.exampleValue : JSON.stringify(displayedBodyExample.exampleValue, null, 8))}"
               ></textarea>
@@ -498,7 +515,7 @@ export default class ApiRequest extends LitElement {
       reqBodyFileInputHtml = html`
         <div class = "small-font-size bold-text row">
           <input type="file" part="file-input" style="max-width:100%" class="request-body-param-file" data-ptype="${reqBody.mimeType}" spellcheck="false" />
-        </div>  
+        </div>
       `;
     }
 
@@ -547,13 +564,13 @@ export default class ApiRequest extends LitElement {
     return html`
       <div class='request-body-container' data-selected-request-body-type="${this.selectedRequestBodyType}">
         <div class="table-title top-gap row">
-        ${getI18nText('operations.request-body')} ${this.request_body.required ? html`<span class="mono-font" style='color:var(--red)'>*</span>` : ''} 
+        ${getI18nText('operations.request-body')} ${this.request_body.required ? html`<span class="mono-font" style='color:var(--red)'>*</span>` : ''}
           <span style = "font-weight:normal; margin-left:5px"> ${this.selectedRequestBodyType}</span>
           <span style="flex:1"></span>
           ${reqBodyTypeSelectorHtml}
         </div>
         ${this.request_body.description ? html`<div class="m-markdown" style="margin-bottom:12px">${unsafeHTML(toMarkdown(this.request_body.description))}</div>` : ''}
-        
+
         ${reqBodySchemaHtml || reqBodyDefaultHtml
           ? html`
             <div class="tab-panel col" style="border-width:0 0 1px 0;">
@@ -566,7 +583,7 @@ export default class ApiRequest extends LitElement {
             </div>`
           : html`${reqBodyFileInputHtml}`
         }
-      </div>  
+      </div>
     `;
   }
 
@@ -619,7 +636,7 @@ export default class ApiRequest extends LitElement {
                 : ''
               }
               <div style="display: flex; justify-content: center">
-                <div> 
+                <div>
                   <button class="m-btn thin-border mar-top-8" style="width:135px" @click="${this.downloadResponseBlob}" part="btn btn-outline">DOWNLOAD</button>
                   ${this.responseBlobType === 'view' || this.responseBlobType === 'image'
                     ? html`<button class="m-btn thin-border mar-top-8" style="width:135px" @click="${this.viewResponseBlob}" part="btn btn-outline">VIEW (NEW TAB)</button>`
@@ -711,12 +728,7 @@ export default class ApiRequest extends LitElement {
     // Query Params
     const queryParameterMap = {};
     queryParamEls.forEach((el) => {
-      if (!el.dataset.array || el.dataset.array === 'false') {
-        if (el.value !== '') {
-          queryParameterMap[el.dataset.pname] = el.value;
-          fetchUrl.searchParams.append(el.dataset.pname, el.value);
-        }
-      } else {
+      if (el.dataset.array === 'true') {
         const paramSerializeStyle = el.dataset.paramSerializeStyle;
         const paramSerializeExplode = el.dataset.paramSerializeExplode;
         const values = Array.isArray(el.value) ? el.value.filter((v) => v !== '') : [];
@@ -735,6 +747,24 @@ export default class ApiRequest extends LitElement {
             }
           }
         }
+      } else if (el.dataset.object === 'true') {
+        const paramSerializeStyle = el.dataset.paramSerializeStyle;
+        const paramSerializeExplode = el.dataset.paramSerializeExplode;
+
+        if (paramSerializeStyle === 'deepObject') {
+          if (paramSerializeExplode === 'true') {
+            el.value.forEach((v) => {
+              const pname = `${el.dataset.pname}[${v.key}]`;
+              queryParameterMap[pname] = v.value;
+              fetchUrl.searchParams.append(pname, v.value);
+            });
+          } else {
+            console.log('OpenAPI Explorer: deepObject serialization style is not supported without explode=true', el.dataset.pname); // eslint-disable-line no-console
+          }
+        }
+      } else if (el.value !== '') {
+        queryParameterMap[el.dataset.pname] = el.value;
+        fetchUrl.searchParams.append(el.dataset.pname, el.value);
       }
     });
 
@@ -930,7 +960,7 @@ export default class ApiRequest extends LitElement {
   // onExecuteButtonClicked
   async onTryClick() {
     const tryBtnEl = this.querySelectorAll('.btn-execute')[0];
-    
+
     let fetchOptions;
     let fetchUrl;
     let path;
