@@ -174,13 +174,13 @@ export default class ApiRequest extends LitElement {
                 style = "width:100%;"
                 data-ptype = "${paramLocation}"
                 data-pname = "${param.name}"
-                data-default = "${Array.isArray(defaultVal) ? defaultVal.join('~|~') : defaultVal}"
+                data-default = "${defaultVal}"
                 data-param-serialize-style = "${paramStyle}"
                 data-param-serialize-explode = "${paramExplode}"
                 data-array = "true"
                 placeholder="add-multiple ↩"
                 @change="${(e) => { this.storedParamValues[param.name] = e.detail.value; this.computeCurlSyntax(); }}"
-                .value = "${this.storedParamValues[param.name] ?? (this.fillRequestWithDefault === 'true' && Array.isArray(defaultVal) ? defaultVal : defaultVal.split(','))}"></tag-input>
+                .value = "${this.storedParamValues[param.name] ?? (this.fillRequestWithDefault === 'true' && defaultVal)}"></tag-input>
             </div>`
             || paramSchema.type === 'object' && paramStyle === 'deepObject' && html`
             <div style=" margin-top: 1rem; margin-bottom: 1rem;">
@@ -272,7 +272,7 @@ export default class ApiRequest extends LitElement {
                           @click="${(e) => {
                             const inputEl = e.target.closest('table').querySelector(`[data-pname="${param.name}"]`);
                             if (inputEl) {
-                              inputEl.value = e.target.dataset.type === 'array' ? [e.target.dataset.enum] : e.target.dataset.enum;
+                              inputEl.value = e.target.dataset.type === 'array' ? [...inputEl.value, e.target.dataset.enum] : e.target.dataset.enum;
                             }
                           }}"
                         >

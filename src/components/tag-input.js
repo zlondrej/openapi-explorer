@@ -1,16 +1,25 @@
 import { LitElement, html } from 'lit';
 
 export default class TagInput extends LitElement {
+  constructor() {
+    super();
+    this.value = [];
+  }
+
   createRenderRoot() { return this; }
 
   render() {
     const tagItemTemplate = html`${
-      (this.value || []).filter(v => v.trim()).map((v) => html`<span class='tag'>${v}</span>`)
+      (Array.isArray(this.value) && this.value || []).map((v, ix) => html`<span class='tag' @click="${() => this.deleteTag(ix)}">${v}</span>`)
     }`;
     return html`
       <div class='tags' tabindex="0">
         ${tagItemTemplate}
-        <input type="text" class='editor' @change="${this.handleLeave}" @paste="${(e) => this.afterPaste(e)}" @keydown="${this.afterKeyDown}" placeholder="${this.placeholder || ''}">
+        <input type="text" class='editor'
+          @change="${this.handleLeave}"
+          @paste="${(e) => this.afterPaste(e)}"
+          @keydown="${this.afterKeyDown}"
+          placeholder="${this.placeholder || ''}">
       </div>
     `;
   }
@@ -18,24 +27,28 @@ export default class TagInput extends LitElement {
   static get properties() {
     return {
       placeholder: { type: String },
-      value: { type: Array, attribute: 'value' },
+      value: { type: Array, attribute: 'value' }
     };
   }
 
   connectedCallback() {
     super.connectedCallback();
     if (!Array.isArray(this.value)) {
-      this.value = this.value !== '' ? [this.value] : [];
+      if (typeof this.value === 'string' && this.value) {
+        this.value = this.value.split(',');
+      } else {
+        this.value = [];
+      }
     }
   }
 
-  attributeChangedCallback(name, oldVal, newVal) {
-    if (name === 'value') {
-      if (newVal && oldVal !== newVal) {
-        this.value = newVal.split(',').filter(v => v.trim());
-      }
-    }
-    super.attributeChangedCallback(name, oldVal, newVal);
+  updated() {
+    this.emitChanged();
+  }
+
+  deleteTag(ix) {
+    this.value.splice(ix, 1);
+    this.value = [...this.value];
   }
 
   afterPaste(e) {

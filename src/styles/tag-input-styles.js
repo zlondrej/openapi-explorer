@@ -14,11 +14,13 @@ export default css`
   }
 
   tag-input .tag {
+    cursor: pointer;
     padding: 3px;
     margin: 2px;
   }
 
   tag-tuple-input .tag {
+    cursor: pointer;
     margin: 2px;
   }
 

@@ -1,6 +1,9 @@
 import { LitElement, html } from 'lit';
 
 function parseTagString(tagString) {
+  if (!tagString) {
+    return [];
+  }
   const tags = tagString.split(',');
   return tags.map((tag) => {
     const tagParts = tag.split(':');
@@ -22,7 +25,8 @@ export default class TagTupleInput extends LitElement {
 
   render() {
     const tagItemTemplate = html`${
-      (this.value || []).map((item) => html`<span class='tag'><span class='tag-key'>${item.key}:</span><span class='tag-value'>${item.value}</span></span>`)
+      (Array.isArray(this.value) && this.value || []).map((item, ix) => html`
+        <span class='tag' @click="${() => this.deleteTag(ix)}"><span class='tag-key'>${item.key}:</span><span class='tag-value'>${item.value}</span></span>`)
     }`;
 
     return html`
@@ -49,17 +53,21 @@ export default class TagTupleInput extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     if (!Array.isArray(this.value)) {
-      this.value = this.value !== '' ? [this.value] : [];
+      if (typeof this.value === 'string') {
+        this.value = parseTagString(this.value);
+      } else {
+        this.value = [];
+      }
     }
   }
 
-  attributeChangedCallback(name, oldVal, newVal) {
-    if (name === 'value') {
-      if (newVal && oldVal !== newVal) {
-        this.value = parseTagString(newVal);
-      }
-    }
-    super.attributeChangedCallback(name, oldVal, newVal);
+  deleteTag(ix) {
+    this.value.splice(ix, 1);
+    this.value = [...this.value];
+  }
+
+  updated() {
+    this.emitChanged();
   }
 
   afterPaste(e) {
