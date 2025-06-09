@@ -150,6 +150,12 @@ export default class ApiRequest extends LitElement {
           paramExplode = param.explode;
         }
       }
+      const paramRequired = paramLocation === 'path' || param.required;
+      let allowedValues = paramSchema.allowedValues;
+      if (!paramRequired && allowedValues && !allowedValues.includes(null)) {
+        // Prepend `null` to `allowedValues` for optional parameters
+        allowedValues = [null, ...allowedValues];
+      }
 
       const displayAllowedValuesHints = (paramSchema.type === 'object' || paramSchema.type === 'array') && paramSchema.allowedValues;
       const deepObjectNameSuffix = paramSchema.type === 'object' && paramStyle === 'deepObject' ? '[*]' : '';
@@ -157,13 +163,13 @@ export default class ApiRequest extends LitElement {
       <tr>
         <td colspan="1" style="width:160px; min-width:50px; vertical-align: top">
           <div class="param-name ${paramSchema.deprecated ? 'deprecated' : ''}" style="margin-top: 1rem;">
-            ${param.name}${deepObjectNameSuffix}${!paramSchema.deprecated && param.required ? html`<span style='color:var(--red);'>*</span>` : ''}
+            ${param.name}${deepObjectNameSuffix}${!paramSchema.deprecated && paramRequired ? html`<span style='color:var(--red);'>*</span>` : ''}
           </div>
           <div class="param-type" style="margin-bottom: 1rem;">
             ${paramSchema.type === 'array'
               ? `${paramSchema.arrayType}`
               : `${paramSchema.format ? paramSchema.format : paramSchema.type}`
-            }${!paramSchema.deprecated && param.required ? html`<span style='opacity: 0;'>*</span>` : ''}
+            }${!paramSchema.deprecated && paramRequired ? html`<span style='opacity: 0;'>*</span>` : ''}
           </div>
         </td>
         <td colspan="2" style="min-width:160px; vertical-align: top">
@@ -179,7 +185,7 @@ export default class ApiRequest extends LitElement {
                 data-param-serialize-explode = "${paramExplode}"
                 data-array = "true"
                 placeholder="add-multiple ↩"
-                @change="${(e) => { this.storedParamValues[param.name] = e.detail.value; this.computeCurlSyntax(); }}"
+                @change="${(e) => { this.storedParamValues[param.name] = e.target.value; this.computeCurlSyntax(); }}"
                 .value = "${this.storedParamValues[param.name] ?? (this.fillRequestWithDefault === 'true' && defaultVal)}"></tag-input>
             </div>`
             || paramSchema.type === 'object' && paramStyle === 'deepObject' && html`
@@ -194,7 +200,7 @@ export default class ApiRequest extends LitElement {
                 data-object = "true"
                 placeholder="add-multiple key-value pairs ↩"
                 placeholderValue="enter the value ↩"
-                @change="${(e) => { this.storedParamValues[param.name] = e.detail.value; this.computeCurlSyntax(); }}"
+                @change="${(e) => { this.storedParamValues[param.name] = e.target.value; this.computeCurlSyntax(); }}"
                 .value = "${this.storedParamValues[param.name] ?? (this.fillRequestWithDefault === 'true' && defaultVal)}"></tag-input>
             </div>`
             || paramSchema.type === 'object' && html`
@@ -212,15 +218,18 @@ export default class ApiRequest extends LitElement {
                 placeholder="${paramSchema.example || defaultVal || ''}"
                 style = "width:100%; margin-top: 1rem; margin-bottom: 1rem;"
                 .value="${this.fillRequestWithDefault === 'true' ? defaultVal : ''}"></textarea>`
-            || paramSchema.allowedValues && html`
+            || allowedValues && html`
               <select aria-label="mime type" style="width:100%; margin-top: 1rem; margin-bottom: 1rem;"
                 data-ptype="${paramLocation}"
                 data-pname="${param.name}"
-                .value="${this.fillRequestWithDefault === 'true' ? defaultVal : ''}"
-                @change="${(e) => { this.storedParamValues[param.name] = e.detail.value; this.computeCurlSyntax(); }}">
-                ${paramSchema.allowedValues.map((allowedValue) => html`
+                .value="${(this.fillRequestWithDefault === 'true' && paramRequired) ? defaultVal : ''}"
+                @change="${(e) => {
+                  this.storedParamValues[param.name] = e.target.value;
+                  this.computeCurlSyntax();
+                }}">
+                ${allowedValues.map((allowedValue) => html`
                   <option value="${allowedValue}" ?selected = '${allowedValue === this.storedParamValues[param.name]}'>
-                    ${allowedValue === null ? '-' : allowedValue}
+                    ${allowedValue === null ? '' : allowedValue}
                   </option>`
                 )}
               </select>`
