@@ -43,9 +43,9 @@ export default css`
 }
 
 .xxx-of-key {
-  font-size: calc(var(--font-size-small) - 2px); 
-  font-weight:bold; 
-  background-color:var(--primary-color); 
+  font-size: calc(var(--font-size-small) - 2px);
+  font-weight:bold;
+  background-color:var(--primary-color);
   color: var(--primary-btn-text-color);
   border-radius:2px;
   line-height:calc(var(--font-size-small) + 6px);
@@ -135,7 +135,13 @@ export default css`
 }
 
 .expanded-endpoint-component > h2:hover, .schema-link:hover {
+.expanded-endpoint-component > h2:hover, .schema-link:hover, .expanded-endpoint-body > .tag-link:hover {
   cursor: pointer;
   text-decoration: underline;
+}
+
+.tag-link {
+  margin-top: 0;
+  font-weight: bold;
 }
 `;

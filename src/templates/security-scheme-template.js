@@ -4,7 +4,7 @@ import { toMarkdown } from '../utils/common-utils.js';
 import base64url from 'base64url';
 import { getI18nText } from '../languages/index.js';
 
-function onApiKeyChange(apiKeyId, e) {
+function onUserEnteredNewApiKeyValue(apiKeyId, e) {
   e.preventDefault();
 
   let apiKeyValue = '';
@@ -292,8 +292,8 @@ function oAuthFlowTemplate(flowName, securityObj, authFlow) {
                 ? html`
                   <input id="oauth-client-secret" type="password" part="textbox textbox-auth-client-secret" value="" placeholder="Client Secret" spellcheck="false" class="oauth-client-input">
                     <select id="oauth-send-client-secret-in" aria-label='oauth client secret location' style="margin-right:5px;" class="oauth-client-input">
-                      <option value = 'header' selected> Authorization Header </option> 
-                      <option value = 'request-body'> Request Body </option> 
+                      <option value = 'header' selected>${getI18nText('authentication.auth-header')}</option> 
+                      <option value = 'request-body'>${getI18nText('operations.request-body')}</option> 
                     </select>
                   </div>`
                 : html`<div style='width:5px'></div>`
@@ -303,7 +303,7 @@ function oAuthFlowTemplate(flowName, securityObj, authFlow) {
               ? html`
                 <div class="oauth-client-input" style="margin-left: 1rem;">
                   <button class="m-btn thin-border" part="btn btn-outline"
-                    @click="${(e) => { onInvokeOAuthFlow.call(this, apiKeyId, flowName, authorizationUrl, tokenUrl, e); }}">GET TOKEN</button>
+                    @click="${(e) => { onInvokeOAuthFlow.call(this, apiKeyId, flowName, authorizationUrl, tokenUrl, e); }}">${getI18nText('authentication.get')}</button>
                 </div>`
               : ''
             }
@@ -343,15 +343,15 @@ function renderSecurityScheme(v) {
             </small>
           </div>`
           : !v.finalKeyValue ? html`
-              <input type="text" value="${v.value}" placeholder="${v.bearerFormat ?? 'api-token'}"
-                spellcheck="false" class="api-key-input fs-exclude" data-hj-suppress data-sl="mask">
+              <input autocomplete="on" name="api-key" type="text" value="${v.value}" placeholder="${v.bearerFormat ?? 'api-token'}"
+                spellcheck="false" class="api-key-input fs-exclude ph-no-capture" data-hj-suppress data-sl="mask">
               <button type="submit" class="m-btn thin-border" style = "margin-left:5px;"
                 part = "btn btn-outline"
-                @click="${(e) => { onApiKeyChange.call(this, v.apiKeyId, e); }}"> 
+                @click="${(e) => { onUserEnteredNewApiKeyValue.call(this, v.apiKeyId, e); }}">
                 ${getI18nText('authentication.set')}
               </button>`
             : html`<span class="blue-text" style="margin-right: 1rem">Key Applied</span>
-              <button class="m-btn thin-border small" part="btn btn-outline" @click=${() => { v.finalKeyValue = ''; this.requestUpdate(); }}>REMOVE</button>`
+              <button class="m-btn thin-border small" part="btn btn-outline" @click=${() => { v.finalKeyValue = ''; this.requestUpdate(); }}>${getI18nText('authentication.remove')}</button>`
         }
       </form>`;
   }
@@ -365,7 +365,7 @@ function renderSecurityScheme(v) {
         <div style="padding-top: 1rem">${unsafeHTML(getI18nText('authentication.http-basic-desc'))}</div>
         <div style="height: 50px; margin-top: 1rem; padding: 10px 0; margin-bottom: 10px;">
           <span class="blue-text" style="margin-right: 1rem">Key Applied</span>
-          <button class="m-btn thin-border small" part="btn btn-outline" @click=${() => { v.finalKeyValue = ''; this.requestUpdate(); }}>REMOVE</button>
+          <button class="m-btn thin-border small" part="btn btn-outline" @click=${() => { v.finalKeyValue = ''; this.requestUpdate(); }}>${getI18nText('authentication.remove')}</button>
         </div>`;
     }
     return html`
@@ -375,14 +375,14 @@ function renderSecurityScheme(v) {
       <div style="padding-top: 1rem">${unsafeHTML(getI18nText('authentication.http-basic-desc'))}</div>
       <div style="height: 50px; margin-top: 1rem; padding: 10px 0; margin-bottom: 10px;">
         <form style="display:flex;">
-          <input type="text" value = "${v.user}" placeholder="${getI18nText('authentication.username')}" spellcheck="false" class="api-key-user" style="width:100px">
-          <input class="api-key-password fs-exclude" data-hj-suppress data-sl="mask"
+          <input autocomplete="on" name="api-key-user" type="text" value = "${v.user}" placeholder="${getI18nText('authentication.username')}" spellcheck="false" class="api-key-user" style="width:100px">
+          <input autocomplete="on" name="api-key-password" class="api-key-password fs-exclude ph-no-capture" data-hj-suppress data-sl="mask"
             type="password" value = "${v.password}" placeholder="${getI18nText('authentication.password')}" spellcheck="false" style = "width:100px; margin:0 5px;">
           <button type="submit" class="m-btn thin-border"
-            @click="${(e) => { onApiKeyChange.call(this, v.apiKeyId, e); }}"
+            @click="${(e) => { onUserEnteredNewApiKeyValue.call(this, v.apiKeyId, e); }}"
             part = "btn btn-outline"
           > 
-            ${v.finalKeyValue ? 'UPDATE' : getI18nText('authentication.set')}
+            ${v.finalKeyValue ? getI18nText('authentication.update') : getI18nText('authentication.set')}
           </button>
         </form>
       </div>`;
@@ -405,14 +405,14 @@ export default function securitySchemeTemplate() {
     <slot name="authentication">
       <div class="section-padding">
         <slot name="authentication-header">
-          <div class='sub-title regular-font'>${getI18nText('headers.authentication')}</div>
+          <div class="sub-title regular-font" role="heading" aria-level="2">${getI18nText('headers.authentication')}</div>
         </slot>
         <div class="small-font-size" style="display:flex; align-items: center; min-height:40px">
           ${providedApiKeys.length > 0
             ? html`
               <div class="blue-text"> ${providedApiKeys.length} API key applied </div>
               <div style="flex:1"></div>
-              <button class="m-btn thin-border" part="btn btn-outline" @click=${() => { onClearAllApiKeys.call(this); }}>CLEAR ALL API KEYS</button>`
+              <button class="m-btn thin-border" part="btn btn-outline" @click=${() => { onClearAllApiKeys.call(this); }}>${getI18nText('authentication.clear')}</button>`
             : html`<div class="red-text">${getI18nText('authentication.no-api-key-applied')}</div>`
           }
         </div>

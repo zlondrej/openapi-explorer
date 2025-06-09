@@ -1,5 +1,5 @@
 # Changelog #
-This package follows standard semvar, `<major>.<minor>.<build>`. No breaking changes will be introduced to existing `<minor>` versions.
+This package follows standard semver, `<major>.<minor>.<build>`. No breaking changes will be introduced to existing `<minor>` versions.
 
 ## 2.2
 * The `table` view is now the default as the `tree` view becomes deprecated. To display the `tree` view, use the `tree` attribute on the openapi-explorer html element.
@@ -20,6 +20,14 @@ This package follows standard semvar, `<major>.<minor>.<build>`. No breaking cha
 * Added `advanced-search-dialog` part so it can by styled separately.
 * Type is now displayed together with format in parentheses instead of displaying format directly.
 * Fixed sample value for `byte` that was crashing on undefined `Buffer`.
+* Fix select drop down menu update trigger.
+* Add missing link to Tag display page.
+* Replace `replaceState` with `pushState` so forwards and backwards navigation actually work.
+* Add id and name for autocomplete options.
+* Improve error on Access-Control-Allow-Private-Network.
+* Add `ph-no-capture` to all sensitive locations.
+* [Fix] Param explode for parameters when using `explode: true` and `style: form`, also aligns default behavior to match open api 3.1 specification.
+* Fixed non-path endpoint parameters without `required=true` not being optional unless they included `null` value.
 
 ## 2.1
 * Add `x-locale` vendor extension to specify the locale of the spec.
@@ -120,7 +128,7 @@ This package follows standard semvar, `<major>.<minor>.<build>`. No breaking cha
 * [Bug] - Fix `explorer-location` tracking for updates triggered outside of component
 
 ## 0.7 ##
-* Introduce `setAuthenticationConfiguration` to set any all configuration related to token management, including clientIds and explicit tokens.
+* Introduce `setAuthenticationConfiguration` to set any/all configuration related to token management, including clientIds and explicit tokens.
 * Display component titles in bold next to description
 * Enable component scrolling.
 

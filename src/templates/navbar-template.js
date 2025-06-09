@@ -5,7 +5,7 @@ import { getI18nText } from '../languages/index.js';
 import { expandCollapseComponent } from './endpoint-template.js';
 import { getComponentInfo } from './components-template.js';
 
-function onExpandCollapse(tagId) {
+function onExpandCollapseTag(event, tagId) {
   const tag = this.resolvedSpec.tags.find(t => t.elementId === tagId);
   if (!tag) {
     return;
@@ -13,6 +13,11 @@ function onExpandCollapse(tagId) {
   tag.expanded = !tag.expanded;
   if (tag.expanded && this.operationsCollapsed) {
     this.resolvedSpec.tags.filter(t => t.elementId !== tagId).forEach(t => t.expanded = false);
+  }
+
+  // Only display the dedicated tag page if the tag has a description, otherwise, it will be an ugly page with nothing on it.
+  if (tag.description) {
+    this.scrollToEventTarget(event, false);
   }
   this.requestUpdate();
 }
@@ -34,7 +39,7 @@ export function expandCollapseAllComponents() {
 /* eslint-disable indent */
 export default function navbarTemplate() {
   return html`
-  <nav class='nav-bar ${this.renderStyle}' part="section-navbar">
+  <nav class='nav-bar ${this.renderStyle}' part="section-navbar" aria-label="${getI18nText('menu.menu')}">
     <slot name="nav-header"></slot>
     ${this.hideSearch ? ''
       : html`
@@ -57,18 +62,19 @@ export default function navbarTemplate() {
     ${html`<nav class='nav-scroll' part="navbar-scroll">
       ${(this.hideInfo || !this.resolvedSpec.info)
         ? ''
-        : html`<div class='nav-bar-info' id='link-overview' data-content-id='overview' @click = '${(e) => this.scrollToEventTarget(e, false)}'>
+        : html`<div class='nav-bar-info' id='link-overview' data-content-id='overview' @click = '${(e) => this.scrollToEventTarget(e, false)}' role="link" tabindex="0" @keydown = '${(e) => { if (e.key === 'Enter') { e.target.click(); }}}';
+      }>
           ${this.resolvedSpec.info.title || getI18nText('menu.overview')}
         </div>`
       }
     
       ${this.hideServerSelection
         ? ''
-        : html`<div class='nav-bar-info' id='link-servers' data-content-id='servers' @click = '${(e) => this.scrollToEventTarget(e, false)}'> ${getI18nText('menu.api-servers')} </div>`
+        : html`<div class='nav-bar-info' id='link-servers' data-content-id='servers' @click = '${(e) => this.scrollToEventTarget(e, false)}' role="link" tabindex="0" @keydown = '${(e) => { if (e.key === 'Enter') { e.target.click(); }}}'> ${getI18nText('menu.api-servers')} </div>`
       }
       ${(this.hideAuthentication || !this.resolvedSpec.securitySchemes)
         ? ''
-        : html`<div class='nav-bar-info' id='link-auth' data-content-id='auth' @click = '${(e) => this.scrollToEventTarget(e, false)}'> ${getI18nText('menu.authentication')} </div>`
+        : html`<div class='nav-bar-info' id='link-auth' data-content-id='auth' @click = '${(e) => this.scrollToEventTarget(e, false)}' role="link" tabindex="0" @keydown = '${(e) => { if (e.key === 'Enter') { e.target.click(); }}}'> ${getI18nText('menu.authentication')} </div>`
       }
 
       <slot name="nav-section" class="custom-nav-section" data-content-id='section' @click = '${(e) => this.scrollToCustomNavSectionTarget(e, false)}'></slot>
@@ -97,8 +103,10 @@ export default function navbarTemplate() {
               ${tag.name === 'General ⦂'
                 ? html``
                 : html`
-                  <div class='nav-bar-tag' id="link-${tag.elementId}" data-content-id='${tag.elementId}'
-                    @click='${() => { onExpandCollapse.call(this, tag.elementId); }}'>
+                  <div class='nav-bar-tag' id="link-${tag.elementId}" data-content-id='${tag.elementId}' role="link" tabindex="0"
+                    @click='${e => { onExpandCollapseTag.call(this, e, tag.elementId); }}'
+                    @keydown='${(e) => { if (e.key === 'Enter') { e.target.click(); }}}'
+                    >
 
                     <div style="display: flex; justify-content: space-between; width: 100%;">
                       <div style="margin-right: .5rem">${tag.name}</div>
@@ -124,7 +132,7 @@ export default function navbarTemplate() {
                   <!-- Paths in each tag (endpoints) -->
                   ${tag.paths.filter((v) => pathIsInSearch(this.matchPaths, v)).map((p) => html`
                   <div class='nav-bar-path ${this.usePathInNavBar ? 'small-font' : ''}'
-                    data-content-id='${p.elementId}' id='link-${p.elementId}' @click = '${(e) => { this.scrollToEventTarget(e, false); }}'>
+                    data-content-id='${p.elementId}' id='link-${p.elementId}' @click = '${(e) => { this.scrollToEventTarget(e, false); }}' role="link" tabindex="0" @keydown = '${(e) => { if (e.key === 'Enter') { e.target.click(); }}}'>
                     <span style="${p.deprecated ? 'filter:opacity(0.5)' : ''}">
                       ${this.usePathInNavBar
                         ? html`<div class='mono-font' style="display: flex; align-items: center;">
@@ -159,11 +167,17 @@ export default function navbarTemplate() {
             return html`
               <div class="nav-bar-tag-and-paths ${component.expanded ? '' : 'collapsed'}">
                 <div class='nav-bar-tag'
+                  role="link" tabindex="0"
                   data-content-id='cmp--${componentInfo.name.toLowerCase()}' 
                   id='link-cmp--${componentInfo.name.toLowerCase()}' 
                   @click="${(e) => {
                     expandCollapseComponent.call(this, component);
                     this.scrollToEventTarget(e, false);
+                  }}"
+                  @keydown="${(e) => {
+                    if (e.key === 'Enter') {
+                      e.target.click();
+                    }
                   }}">
                   <div>
                     ${componentInfo.name}
